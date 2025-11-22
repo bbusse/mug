@@ -2,7 +2,7 @@
 Dynamic tray icons: Fill your mug with life
 
 Create instant functional tray icons -  
-Pick a png and an action, ready 🚀
+Pick a png or emoji and an action, ready 🚀
 
 # Usage
 
