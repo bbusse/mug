@@ -15,7 +15,11 @@ $ git clone https://github.com/bbusse/mug
 $ git clone https://github.com/bbusse/mug
 $ make && make install
 ```
-## Attribution
+# Launch on system start
+```
+$ make enable
+```
+# Attribution
 
 Rocket emoji graphic © 2014–2025 Twitter, Inc.
 Licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
