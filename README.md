@@ -1,12 +1,13 @@
 # mug
 Dynamic tray icons: Fill your mug with life
 
+Create instant functional tray icons -  
 Pick a png and an action, ready 🚀
 
 # Usage
 ```
-$ mug --icon "assets/rocket.png" --on-left-click ""
-$ mug --icon "assets/rocket.png" --on-left-click ""
+$ mug --on-left-click "osascript -e 'display notification \"Full steam ahead\" with title \"mug\"'"
+$ mug --icon "assets/rocket.png" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
 $ git clone https://github.com/bbusse/mug
 ```
 
