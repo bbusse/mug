@@ -1,3 +1,17 @@
+#[allow(dead_code)]
+extern "C" fn tray_right_mouse_down(this: &Object, _cmd: Sel, _event: id) {
+    println!("rightMouseDown: called");
+    if let Some(cmd) = RIGHT_CLICK_CMD.lock().unwrap().as_ref() {
+        println!("Running right-click command: {}", cmd);
+        let result = Command::new("/bin/sh").arg("-c").arg(cmd.as_str()).spawn();
+        let log_msg = if let Ok(child) = &result {
+            format!("Launched right-click command: {} (pid {})", cmd, child.id())
+        } else {
+            format!("Failed to launch right-click command: {}", cmd)
+        };
+        println!("{}", log_msg);
+    }
+}
 // SPDX-License-Identifier: BSD-3-Clause
 // Author: Björn Busse <bj.rn@baerlin.eu>
 //
@@ -9,6 +23,7 @@
 extern "C" {
     fn NSLog(format: *const std::os::raw::c_void);
     fn object_getClass(obj: *mut Object) -> *const Class;
+    fn object_setClass(obj: *mut Object, cls: *const Class);
 }
 
 use cocoa::base::{id, nil, YES, NO};
@@ -135,23 +150,17 @@ fn main() {
     }
         // Set up click handlers if commands are provided
         if LEFT_CLICK_CMD.lock().unwrap().is_some() || RIGHT_CLICK_CMD.lock().unwrap().is_some() {
-            let superclass = objc::runtime::Class::get("NSObject").unwrap();
-            let mut decl = objc::declare::ClassDecl::new("MugTrayTarget", superclass).unwrap();
+            let superclass = objc::runtime::Class::get("NSStatusBarButton").unwrap();
+            let mut decl = objc::declare::ClassDecl::new("MugTrayButtonSubclass", superclass).unwrap();
             unsafe {
                 decl.add_method(sel!(tray_left_click), tray_left_click as extern "C" fn(&Object, Sel));
-                decl.add_method(sel!(tray_right_click), tray_right_click as extern "C" fn(&Object, Sel));
+                decl.add_method(sel!(rightMouseDown:), tray_right_mouse_down as extern "C" fn(&Object, Sel, id));
             }
             let cls = decl.register();
-            let target: id = unsafe { msg_send![cls, alloc] };
-            let target: id = unsafe { msg_send![target, init] };
-            unsafe { let _: () = msg_send![button, setTarget: target]; }
-            // Set left click
+            unsafe { object_setClass(button, cls); }
+            unsafe { let _: () = msg_send![button, setTarget: button]; }
             if LEFT_CLICK_CMD.lock().unwrap().is_some() {
                 unsafe { let _: () = msg_send![button, setAction: sel!(tray_left_click)]; }
-            }
-            // Set right click
-            if RIGHT_CLICK_CMD.lock().unwrap().is_some() {
-                unsafe { let _: () = msg_send![button, setRightMouseDownAction: sel!(tray_right_click)]; }
             }
         } else {
             let menu: id = unsafe { msg_send![NSMenu::alloc(nil), init] };
