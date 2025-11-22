@@ -21,7 +21,28 @@ use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 
 // Store the left-click command in a static for the callback
+
 static LEFT_CLICK_CMD: Lazy<Mutex<Option<Arc<String>>>> = Lazy::new(|| Mutex::new(None));
+static RIGHT_CLICK_CMD: Lazy<Mutex<Option<Arc<String>>>> = Lazy::new(|| Mutex::new(None));
+
+#[allow(dead_code)]
+extern "C" fn tray_right_click(this: &Object, _cmd: Sel) {
+    let _ = this;
+    let result = std::panic::catch_unwind(|| {
+        if let Some(cmd) = RIGHT_CLICK_CMD.lock().unwrap().as_ref() {
+            let result = Command::new("/bin/sh").arg("-c").arg(cmd.as_str()).spawn();
+            let log_msg = if let Ok(child) = &result {
+                format!("Launched right-click command: {} (pid {})", cmd, child.id())
+            } else {
+                format!("Failed to launch right-click command: {}", cmd)
+            };
+            println!("{}", log_msg);
+        }
+    });
+    if let Err(e) = result {
+        println!("Right-click handler panicked: {:?}", e);
+    }
+}
 
 #[allow(dead_code)]
 extern "C" fn tray_left_click(this: &Object, _cmd: Sel) {
@@ -47,12 +68,16 @@ fn main() {
     let _pool = unsafe { NSAutoreleasePool::new(nil) };
     let args: Vec<String> = std::env::args().collect();
     let mut left_click_cmd: Option<String> = None;
+    let mut right_click_cmd: Option<String> = None;
     let mut use_colour = false;
     let mut tray_text: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
         if args[i] == "--on-left-click" && i + 1 < args.len() {
             left_click_cmd = Some(args[i + 1].clone());
+            i += 2;
+        } else if args[i] == "--on-right-click" && i + 1 < args.len() {
+            right_click_cmd = Some(args[i + 1].clone());
             i += 2;
         } else if args[i] == "--use-colour" {
             use_colour = true;
@@ -66,6 +91,9 @@ fn main() {
     }
     if let Some(cmd) = left_click_cmd {
         *LEFT_CLICK_CMD.lock().unwrap() = Some(Arc::new(cmd));
+    }
+    if let Some(cmd) = right_click_cmd {
+        *RIGHT_CLICK_CMD.lock().unwrap() = Some(Arc::new(cmd));
     }
     let app = unsafe { NSApp() };
     unsafe { app.setActivationPolicy_(cocoa::appkit::NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory); }
@@ -105,19 +133,26 @@ fn main() {
             unsafe { button.setTitle_(empty_title); }
         }
     }
-        // Set up left-click handler if command is provided
-        if LEFT_CLICK_CMD.lock().unwrap().is_some() {
-            // Register MugTrayTarget class and create instance
+        // Set up click handlers if commands are provided
+        if LEFT_CLICK_CMD.lock().unwrap().is_some() || RIGHT_CLICK_CMD.lock().unwrap().is_some() {
             let superclass = objc::runtime::Class::get("NSObject").unwrap();
             let mut decl = objc::declare::ClassDecl::new("MugTrayTarget", superclass).unwrap();
             unsafe {
                 decl.add_method(sel!(tray_left_click), tray_left_click as extern "C" fn(&Object, Sel));
+                decl.add_method(sel!(tray_right_click), tray_right_click as extern "C" fn(&Object, Sel));
             }
             let cls = decl.register();
             let target: id = unsafe { msg_send![cls, alloc] };
             let target: id = unsafe { msg_send![target, init] };
             unsafe { let _: () = msg_send![button, setTarget: target]; }
-            unsafe { let _: () = msg_send![button, setAction: sel!(tray_left_click)]; }
+            // Set left click
+            if LEFT_CLICK_CMD.lock().unwrap().is_some() {
+                unsafe { let _: () = msg_send![button, setAction: sel!(tray_left_click)]; }
+            }
+            // Set right click
+            if RIGHT_CLICK_CMD.lock().unwrap().is_some() {
+                unsafe { let _: () = msg_send![button, setRightMouseDownAction: sel!(tray_right_click)]; }
+            }
         } else {
             let menu: id = unsafe { msg_send![NSMenu::alloc(nil), init] };
             let quit_item = unsafe {
