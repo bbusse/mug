@@ -15,9 +15,6 @@ mug --use-colour --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
 
 # Show emoji or text as tray icon (always in color)
 mug --text "🚀" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
-
-# Clone repo
-git clone https://github.com/bbusse/mug
 ```
 # Options
 
