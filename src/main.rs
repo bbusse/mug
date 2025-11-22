@@ -14,7 +14,7 @@ extern "C" {
 use cocoa::base::{id, nil, YES};
 use cocoa::appkit::{NSApp, NSApplication, NSStatusBar, NSStatusItem, NSMenu, NSMenuItem, NSButton, NSImage};
 use cocoa::foundation::{NSAutoreleasePool, NSString, NSSize};
-use objc::{msg_send, sel, sel_impl};
+use objc::{msg_send, sel, sel_impl, class};
 use objc::runtime::{Object, Sel, Class};
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -63,12 +63,20 @@ fn main() {
     unsafe { app.setActivationPolicy_(cocoa::appkit::NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory); }
     let status_item = unsafe { NSStatusBar::systemStatusBar(nil).statusItemWithLength_(cocoa::appkit::NSVariableStatusItemLength) };
     let button: id = unsafe { status_item.button() };
-    // Load PNG icon
-    let project_root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
-    let icon_path = format!("{}/assets/rocket.png", project_root);
-    println!("Icon path: {}", icon_path);
-    let ns_icon_path = unsafe { NSString::alloc(nil).init_str(&icon_path) };
-    let image = unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_icon_path) };
+    // Load PNG icon from bundle Resources using NSBundle, fallback to relative path
+    let ns_bundle: id = unsafe { msg_send![class!(NSBundle), mainBundle] };
+    let ns_icon_name = unsafe { NSString::alloc(nil).init_str("rocket.png") };
+    let ns_icon_path: id = unsafe { msg_send![ns_bundle, pathForResource:ns_icon_name ofType:nil] };
+    let image = if !ns_icon_path.is_null() {
+        println!("Icon path (NSBundle): {:?}", ns_icon_path);
+        unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_icon_path) }
+    } else {
+        // Fallback: try relative path for dev mode
+        let fallback_path = "assets/rocket.png";
+        println!("Icon path fallback: {}", fallback_path);
+        let ns_fallback_path = unsafe { NSString::alloc(nil).init_str(fallback_path) };
+        unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_fallback_path) }
+    };
     if image.is_null() {
         println!("Failed to load tray icon image");
     } else {
