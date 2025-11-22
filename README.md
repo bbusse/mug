@@ -15,10 +15,15 @@ mug --use-colour --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
 
 # Show emoji or text as tray icon (always in colour)
 mug --text "🚀" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
+
+# Run different commands for left and right click
+mug --on-left-click "osascript -e 'display notification \"Left\" with title \"mug\"'" \
+    --on-right-click "osascript -e 'display notification \"Right\" with title \"mug\"'"
 ```
 # Options
 
 - `--on-left-click <command>`: Run a shell command when the tray icon is left-clicked
+- `--on-right-click <command>`: Run a shell command when the tray icon is right-clicked
 - `--use-colour`: Show the PNG icon in colour (default is monochrome)
 - `--text <emoji or string>`: Show an emoji or text as the tray icon instead of a PNG (always in colour)
 
