@@ -44,4 +44,4 @@ Source: [Twemoji GitHub Repository](https://github.com/twitter/twemoji)
 This project uses Twemoji graphics (resized to 32×32) under the CC-BY 4.0 license.
 
 # Resources
-https://github.com/twitter/twemoji)  
+https://github.com/twitter/twemoji  
