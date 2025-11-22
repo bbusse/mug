@@ -10,17 +10,17 @@ Pick a png or emoji and an action, ready 🚀
 # Show PNG icon (monochrome by default)
 mug --on-left-click "osascript -e 'display notification \"Full steam ahead\" with title \"mug\"'"
 
-# Show PNG icon in color
+# Show PNG icon in colour
 mug --use-colour --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
 
-# Show emoji or text as tray icon (always in color)
+# Show emoji or text as tray icon (always in colour)
 mug --text "🚀" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
 ```
 # Options
 
 - `--on-left-click <command>`: Run a shell command when the tray icon is left-clicked
-- `--use-colour`: Show the PNG icon in color (default is monochrome)
-- `--text <emoji or string>`: Show an emoji or text as the tray icon instead of a PNG
+- `--use-colour`: Show the PNG icon in colour (default is monochrome)
+- `--text <emoji or string>`: Show an emoji or text as the tray icon instead of a PNG (always in colour)
 
 # Install
 ```
