@@ -11,7 +11,7 @@ extern "C" {
     fn object_getClass(obj: *mut Object) -> *const Class;
 }
 
-use cocoa::base::{id, nil, YES};
+use cocoa::base::{id, nil, YES, NO};
 use cocoa::appkit::{NSApp, NSApplication, NSStatusBar, NSStatusItem, NSMenu, NSMenuItem, NSButton, NSImage};
 use cocoa::foundation::{NSAutoreleasePool, NSString, NSSize};
 use objc::{msg_send, sel, sel_impl, class};
@@ -47,10 +47,18 @@ fn main() {
     let _pool = unsafe { NSAutoreleasePool::new(nil) };
     let args: Vec<String> = std::env::args().collect();
     let mut left_click_cmd: Option<String> = None;
+    let mut use_colour = false;
+    let mut tray_text: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
         if args[i] == "--on-left-click" && i + 1 < args.len() {
             left_click_cmd = Some(args[i + 1].clone());
+            i += 2;
+        } else if args[i] == "--use-colour" {
+            use_colour = true;
+            i += 1;
+        } else if args[i] == "--text" && i + 1 < args.len() {
+            tray_text = Some(args[i + 1].clone());
             i += 2;
         } else {
             i += 1;
@@ -63,30 +71,40 @@ fn main() {
     unsafe { app.setActivationPolicy_(cocoa::appkit::NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory); }
     let status_item = unsafe { NSStatusBar::systemStatusBar(nil).statusItemWithLength_(cocoa::appkit::NSVariableStatusItemLength) };
     let button: id = unsafe { status_item.button() };
-    // Load PNG icon from bundle Resources using NSBundle, fallback to relative path
-    let ns_bundle: id = unsafe { msg_send![class!(NSBundle), mainBundle] };
-    let ns_icon_name = unsafe { NSString::alloc(nil).init_str("rocket.png") };
-    let ns_icon_path: id = unsafe { msg_send![ns_bundle, pathForResource:ns_icon_name ofType:nil] };
-    let image = if !ns_icon_path.is_null() {
-        println!("Icon path (NSBundle): {:?}", ns_icon_path);
-        unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_icon_path) }
+    if let Some(text) = tray_text {
+        let ns_text = unsafe { NSString::alloc(nil).init_str(&text) };
+        unsafe { button.setImage_(nil); }
+        unsafe { button.setTitle_(ns_text); }
     } else {
-        // Fallback: try relative path for dev mode
-        let fallback_path = "assets/rocket.png";
-        println!("Icon path fallback: {}", fallback_path);
-        let ns_fallback_path = unsafe { NSString::alloc(nil).init_str(fallback_path) };
-        unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_fallback_path) }
-    };
-    if image.is_null() {
-        println!("Failed to load tray icon image");
-    } else {
-        let size = NSSize { width: 16.0, height: 16.0 };
-        unsafe { let _: () = msg_send![image, setSize: size]; }
-        unsafe { let _: () = msg_send![image, setTemplate: YES]; }
-        unsafe { button.setImage_(image); }
-        let empty_title = unsafe { NSString::alloc(nil).init_str("") };
-        unsafe { button.setTitle_(empty_title); }
+        // Load PNG icon from bundle Resources using NSBundle, fallback to relative path
+        let ns_bundle: id = unsafe { msg_send![class!(NSBundle), mainBundle] };
+        let ns_icon_name = unsafe { NSString::alloc(nil).init_str("rocket.png") };
+        let ns_icon_path: id = unsafe { msg_send![ns_bundle, pathForResource:ns_icon_name ofType:nil] };
+        let image = if !ns_icon_path.is_null() {
+            println!("Icon path (NSBundle): {:?}", ns_icon_path);
+            unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_icon_path) }
+        } else {
+            // Fallback: try relative path for dev mode
+            let fallback_path = "assets/rocket.png";
+            println!("Icon path fallback: {}", fallback_path);
+            let ns_fallback_path = unsafe { NSString::alloc(nil).init_str(fallback_path) };
+            unsafe { NSImage::alloc(nil).initByReferencingFile_(ns_fallback_path) }
+        };
+        if image.is_null() {
+            println!("Failed to load tray icon image");
+        } else {
+            let size = NSSize { width: 16.0, height: 16.0 };
+            unsafe { let _: () = msg_send![image, setSize: size]; }
+            if use_colour {
+                unsafe { let _: () = msg_send![image, setTemplate: NO]; }
+            } else {
+                unsafe { let _: () = msg_send![image, setTemplate: YES]; }
+            }
+            unsafe { button.setImage_(image); }
+            let empty_title = unsafe { NSString::alloc(nil).init_str("") };
+            unsafe { button.setTitle_(empty_title); }
         }
+    }
         // Set up left-click handler if command is provided
         if LEFT_CLICK_CMD.lock().unwrap().is_some() {
             // Register MugTrayTarget class and create instance
