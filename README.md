@@ -5,11 +5,25 @@ Create instant functional tray icons -
 Pick a png and an action, ready 🚀
 
 # Usage
+
 ```
-$ mug --on-left-click "osascript -e 'display notification \"Full steam ahead\" with title \"mug\"'"
-$ mug --icon "assets/rocket.png" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
-$ git clone https://github.com/bbusse/mug
+# Show PNG icon (monochrome by default)
+mug --on-left-click "osascript -e 'display notification \"Full steam ahead\" with title \"mug\"'"
+
+# Show PNG icon in color
+mug --use-colour --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
+
+# Show emoji or text as tray icon (always in color)
+mug --text "🚀" --on-left-click "afplay /System/Library/Sounds/Ping.aiff"
+
+# Clone repo
+git clone https://github.com/bbusse/mug
 ```
+# Options
+
+- `--on-left-click <command>`: Run a shell command when the tray icon is left-clicked
+- `--use-colour`: Show the PNG icon in color (default is monochrome)
+- `--text <emoji or string>`: Show an emoji or text as the tray icon instead of a PNG
 
 # Install
 ```
