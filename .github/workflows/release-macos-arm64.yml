@@ -1,0 +1,49 @@
+name: Build and Release for macOS (arm64)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-apple-darwin
+          profile: minimal
+          override: true
+      - name: Add aarch64 target
+        run: rustup target add aarch64-apple-darwin
+      - name: Build for macOS arm64
+        run: cargo build --release --target aarch64-apple-darwin
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mug-macos-arm64
+          path: target/aarch64-apple-darwin/release/mug
+
+  release:
+    needs: build-macos-arm64
+    runs-on: macos-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mug-macos-arm64
+          path: ./release
+      - name: Create GitHub Release (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: mug macOS arm64 (latest)
+          files: ./release/mug
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
