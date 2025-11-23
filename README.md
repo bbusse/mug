@@ -26,6 +26,7 @@ mug --on-left-click "osascript -e 'display notification \"Left\" with title \"mu
 - `--on-right-click <command>`: Run a shell command when the tray icon is right-clicked
 - `--use-colour`: Show the PNG icon in colour (default is monochrome)
 - `--text <emoji or string>`: Show an emoji or text as the tray icon instead of a PNG (always in colour)
+- `--tooltip <text>`: Show a custom tooltip when hovering over the tray icon
 
 # Install
 ```
@@ -44,4 +45,4 @@ Source: [Twemoji GitHub Repository](https://github.com/twitter/twemoji)
 This project uses Twemoji graphics (resized to 32×32) under the CC-BY 4.0 license.
 
 # Resources
-https://github.com/twitter/twemoji  
+https://github.com/twitter/twemoji
